@@ -39,7 +39,7 @@ export default function Home() {
 
   function handleTemplateChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
     setTemplate(event.target.value)
-    setCompiled(update(template, data))
+    setCompiled(update(event.target.value, data))
   }
 
   function handleDataChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
