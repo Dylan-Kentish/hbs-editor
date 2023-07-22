@@ -28,14 +28,18 @@ const defaultData = `
 `
 
 function update(template: string, data: string) {
-  const compiled = Handlebars.compile(template)(JSON.parse(data))
-  return compiled
+  try{
+    return Handlebars.compile(template)(JSON.parse(data))
+  } catch (e) {
+    console.error(e)
+    return null;
+  }
 }
 
 export default function Home() {
   const [template, setTemplate] = useState<string>(defaultTemplate)
   const [data, setData] = useState<string>(defaultData)
-  const [compiled, setCompiled] = useState<string>(update(template, data))
+  const [compiled, setCompiled] = useState<string | null>(update(template, data))
 
   function handleTemplateChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
     setTemplate(event.target.value)
@@ -48,15 +52,16 @@ export default function Home() {
   }
 
   return (
-    <main className="flex grow h-screen p-5">
+    <main className="flex grow h-screen p-5 gap-5">
       <div className="flex grow flex-col justify-center gap-5">
         <h1 className="text-4xl font-bold text-center ">Handlebars template</h1>
         <textarea className="flex grow text-black resize-none" spellCheck={false} value={template} onChange={handleTemplateChange} />
         <h1 className="text-4xl font-bold text-center">Handlebars data</h1>
         <textarea className="flex grow text-black resize-none" spellCheck={false} value={data} onChange={handleDataChange} />
       </div>
-      <div className="flex grow p-5 border-2 border-white mx-5">
-        <div dangerouslySetInnerHTML={{__html: compiled}} />
+      <div className="flex grow flex-col gap-5">
+        <h1 className="text-4xl font-bold text-center ">Compiled result</h1>
+        <div className="h-full p-5 border-2 border-white" dangerouslySetInnerHTML={{__html: compiled ?? ''}} />
       </div>
     </main>
   )
