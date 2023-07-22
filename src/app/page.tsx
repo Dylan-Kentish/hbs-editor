@@ -48,14 +48,14 @@ export default function Home() {
   }
 
   return (
-    <main className="flex grow h-screen">
+    <main className="flex grow h-screen p-5">
       <div className="flex grow flex-col justify-center gap-5">
         <h1 className="text-4xl font-bold text-center ">Handlebars template</h1>
-        <textarea className="flex grow text-black" value={template} onChange={handleTemplateChange} />
+        <textarea className="flex grow text-black resize-none" spellCheck={false} value={template} onChange={handleTemplateChange} />
         <h1 className="text-4xl font-bold text-center">Handlebars data</h1>
-        <textarea className="flex grow text-black" value={data} onChange={handleDataChange} />
+        <textarea className="flex grow text-black resize-none" spellCheck={false} value={data} onChange={handleDataChange} />
       </div>
-      <div className="flex grow">
+      <div className="flex grow p-5 border-2 border-white mx-5">
         <div dangerouslySetInnerHTML={{__html: compiled}} />
       </div>
     </main>
