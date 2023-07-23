@@ -1,5 +1,6 @@
 'use client';
 
+import CompiledRenderer from '@/components/CompliedRenderer';
 import Handlebars from 'handlebars';
 import { useState } from 'react';
 
@@ -12,87 +13,155 @@ const defaultTemplate = `
     body {
       font-family: Arial, sans-serif;
       line-height: 1.6;
+      background-color: #f7f7f7;
+      margin: 20px;
+      padding: 0;
     }
-    h1, h2 {
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    h2 {
       color: #555;
     }
+
     .product-card {
       display: flex;
-      border: 1px solid #ccc;
+      border: 1px solid #ddd;
       margin-bottom: 20px;
       padding: 10px;
+      border-radius: 4px;
+      gap: 10px;
     }
+
     .product-image {
-      width: 100px;
-      height: 100px;
+      flex: 0 0 100px;
       margin-right: 10px;
     }
+
+    .product-image img {
+      width: auto;
+      aspect-ratio: 1/1;
+      height: 100%;
+      border-radius: 4px;
+    }
+
     .product-details {
       flex: 1;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 20px;
     }
+
     th, td {
-      padding: 8px;
+      padding: 10px;
       text-align: left;
-      border-bottom: 1px solid #ccc;
+      border-bottom: 1px solid #ddd;
     }
+
     th {
       background-color: #f2f2f2;
     }
+
     p {
       margin-bottom: 10px;
+    }
+
+    .shipping-address, .payment-method {
+      border-top: 1px solid #ddd;
+      padding-top: 20px;
+      margin-top: 20px;
+    }
+
+    .thank-you {
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .order-button {
+      display: inline-block;
+      background-color: #007BFF;
+      color: #ffffff;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+    }
+
+    .order-button:hover {
+      background-color: #0056b3;
     }
   </style>
 </head>
 <body>
-  <h1>Order Confirmation</h1>
+  <div class="container">
+    <h1>Order Confirmation</h1>
   
-  <h2>Order Summary</h2>
-  {{#each products}}
-  <div class="product-card">
-    <div class="product-image">
-      <img src="{{this.image}}" alt="{{this.name}}">
+    <h2>Order Summary</h2>
+    {{#each products}}
+    <div class="product-card">
+      <div class="product-image">
+        <img src="{{this.image}}" alt="{{this.name}}">
+      </div>
+      <div class="product-details">
+        <p><strong>{{this.name}}</strong></p>
+        <p>Quantity: {{this.quantity}}</p>
+        <p>Price: {{this.price}}</p>
+      </div>
     </div>
-    <div class="product-details">
-      <p><strong>{{this.name}}</strong></p>
-      <p>Quantity: {{this.quantity}}</p>
-      <p>Price: {{this.price}}</p>
+    {{/each}}
+
+    <div class="shipping-address">
+      <h2>Shipping Address</h2>
+      <p>
+        {{shippingAddress.name}}
+        <br>
+        {{shippingAddress.address}}
+        <br>
+        {{shippingAddress.city}}, {{shippingAddress.state}} {{shippingAddress.zip}}
+        <br>
+        {{shippingAddress.country}}
+      </p>
     </div>
+
+    <div class="payment-method">
+      <h2>Payment Method</h2>
+      <p>
+        Payment Method: {{paymentMethod.type}}
+        <br>
+        Cardholder Name: {{paymentMethod.cardholderName}}
+        <br>
+        Card Number: **** **** **** {{paymentMethod.last4}}
+        <br>
+        Expiry Date: {{paymentMethod.expiryDate}}
+      </p>
+    </div>
+
+    <p class="thank-you">
+      Thank you for your order! If you have any questions or concerns, please don't hesitate to contact our customer support.
+    </p>
+
+    <p style="text-align: center;">
+      <a class="order-button" href="https://example.com/orders/{{orderId}}" target="_blank" rel="noopener noreferrer">View Order Details</a>
+    </p>
   </div>
-  {{/each}}
-
-  <h2>Shipping Address</h2>
-  <p>
-    {{shippingAddress.name}}
-    <br>
-    {{shippingAddress.address}}
-    <br>
-    {{shippingAddress.city}}, {{shippingAddress.state}} {{shippingAddress.zip}}
-    <br>
-    {{shippingAddress.country}}
-  </p>
-
-  <h2>Payment Method</h2>
-  <p>
-    Payment Method: {{paymentMethod.type}}
-    <br>
-    Cardholder Name: {{paymentMethod.cardholderName}}
-    <br>
-    Card Number: **** **** **** {{paymentMethod.last4}}
-    <br>
-    Expiry Date: {{paymentMethod.expiryDate}}
-  </p>
-
-  <p>
-    Thank you for your order! If you have any questions or concerns, please don't hesitate to contact our customer support.
-  </p>
 </body>
 </html>
-
 `
 
 const defaultData = `
@@ -168,7 +237,9 @@ export default function Home() {
       </div>
       <div className="flex grow flex-col gap-5">
         <h1 className="text-4xl font-bold text-center ">Compiled result</h1>
-        <div className="h-full p-5 border-2 border-white" dangerouslySetInnerHTML={{__html: compiled ?? ''}} />
+        <div className="h-full border-2 border-white bg-white">
+          <CompiledRenderer compiledHTML={compiled} />
+        </div>
       </div>
     </main>
   )
