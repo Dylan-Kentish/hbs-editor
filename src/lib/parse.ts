@@ -88,7 +88,7 @@ function parseProgramNode(node: hbs.AST.Program): ts.TypeNode | null {
 }
 
 // Function to generate TypeScript types from a Handlebars template
-export function generateTypeScriptTypes(hbsTemplate: string): ts.TypeNode | null {
+export function parseHBSTemplate(hbsTemplate: string): ts.TypeNode | null {
   const ast = handlebars.parse(hbsTemplate);
 
   return parseProgramNode(ast);

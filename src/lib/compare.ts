@@ -1,7 +1,7 @@
 import ts from "typescript";
 
 // Helper function to check if a TypeNode is equal to Expected
-export function isExpected(typeNode: ts.TypeNode | null, expected: any): boolean {
+export function areEqual(typeNode: ts.TypeNode | null, expected: any): boolean {
   if (!typeNode) {
     return false;
   }
@@ -39,11 +39,11 @@ export function isExpected(typeNode: ts.TypeNode | null, expected: any): boolean
 
         if (member.type) {
           if (ts.isTypeLiteralNode(member.type)) {
-            return isExpected(member.type, expected[variableName])
+            return areEqual(member.type, expected[variableName])
           } else if (ts.isArrayTypeNode(member.type)) {
             const array = expected[variableName] as any[];
             const type = member.type;
-            return array && array.every(item => isExpected(type, item))
+            return array && array.every(item => areEqual(type, item))
           } else {
             const hasKey = keys.includes(variableName)
 

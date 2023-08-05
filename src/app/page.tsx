@@ -1,8 +1,8 @@
 'use client';
 
 import CompiledRenderer from '@/components/CompliedRenderer';
-import { isExpected } from '@/lib/compare';
-import { generateTypeScriptTypes } from '@/lib/parse';
+import { areEqual } from '@/lib/compare';
+import { parseHBSTemplate } from '@/lib/parse';
 import { toString } from '@/lib/string';
 import Handlebars from 'handlebars';
 import { useState } from 'react';
@@ -210,15 +210,27 @@ const defaultData = `
 function update(template: string, data: string) {
   try{
     const parsedJSON = JSON.parse(data);
-    const compiled = Handlebars.compile(template)(parsedJSON);
-    const node = generateTypeScriptTypes(template)
-    console.log("Template data structure", toString(node));
-    console.log("Json data structure", parsedJSON);
-    console.log("Template has expected data structure", isExpected(node, parsedJSON))
-    return compiled;
+    return Handlebars.compile(template)(parsedJSON);
   } catch (e) {
     console.error(e)
     return null;
+  }
+}
+
+function checkTypeEquality(template: string, data: string): boolean {
+  try{
+    const parsedJSON = JSON.parse(data);
+    const node = parseHBSTemplate(template)
+    const equal = areEqual(node, parsedJSON);
+
+    if (!equal) {
+      return false;
+    }
+
+    return true;
+  } catch (e) {
+    console.error(e)
+    return false;
   }
 }
 
@@ -226,24 +238,48 @@ export default function Home() {
   const [template, setTemplate] = useState<string>(defaultTemplate)
   const [data, setData] = useState<string>(defaultData)
   const [compiled, setCompiled] = useState<string | null>(update(template, data))
+  const [typesEqual, setTypesEqual] = useState<boolean | undefined>(true)
 
   function handleTemplateChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
     setTemplate(event.target.value)
-    setCompiled(update(event.target.value, data))
+
+    const compiled = update(event.target.value, data);
+
+    if (compiled !== null) {
+      setTypesEqual(checkTypeEquality(event.target.value, data))
+    } else {
+      setTypesEqual(undefined)
+    }
+
+    setCompiled(compiled)
   }
 
   function handleDataChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
     setData(event.target.value)
-    setCompiled(update(template, event.target.value))
+
+    const compiled = update(template, event.target.value);
+
+    if (compiled !== null) {
+      setTypesEqual(checkTypeEquality(template, event.target.value))
+    } else {
+      setTypesEqual(undefined)
+    }
+
+    setCompiled(compiled)
   }
 
   return (
     <main className="flex grow h-screen p-5 gap-5">
       <div className="flex grow flex-col justify-center gap-5">
         <h1 className="text-4xl font-bold text-center ">Handlebars template</h1>
-        <textarea className="flex grow text-black resize-none" spellCheck={false} value={template} onChange={handleTemplateChange} />
+        <textarea className="flex grow text-black resize-none rounded-md" spellCheck={false} value={template} onChange={handleTemplateChange} />
         <h1 className="text-4xl font-bold text-center">Handlebars data</h1>
-        <textarea className="flex grow text-black resize-none" spellCheck={false} value={data} onChange={handleDataChange} />
+        <textarea 
+          className={`flex grow text-black resize-none rounded-md
+            ${typesEqual === true ? 'bg-green-200' : typesEqual === false ? 'bg-red-200' : 'bg-orange-200'}`} 
+          spellCheck={false} 
+          value={data} 
+          onChange={handleDataChange} />
       </div>
       <div className="flex grow flex-col gap-5">
         <h1 className="text-4xl font-bold text-center ">Compiled result</h1>
