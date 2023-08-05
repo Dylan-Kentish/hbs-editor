@@ -1,6 +1,9 @@
 'use client';
 
 import CompiledRenderer from '@/components/CompliedRenderer';
+import { isExpected } from '@/lib/compare';
+import { generateTypeScriptTypes } from '@/lib/parse';
+import { toString } from '@/lib/string';
 import Handlebars from 'handlebars';
 import { useState } from 'react';
 
@@ -169,19 +172,19 @@ const defaultData = `
   "products": [
     {
       "name": "Product A",
-      "quantity": 2,
+      "quantity": "2",
       "price": "$25.99",
       "image": "https://via.placeholder.com/150"
     },
     {
       "name": "Product B",
-      "quantity": 1,
+      "quantity": "1",
       "price": "$19.95",
       "image": "https://via.placeholder.com/150"
     },
     {
       "name": "Product C",
-      "quantity": 3,
+      "quantity": "3",
       "price": "$12.49",
       "image": "https://via.placeholder.com/150"
     }
@@ -199,13 +202,20 @@ const defaultData = `
     "cardholderName": "John Doe",
     "last4": "7890",
     "expiryDate": "09/25"
-  }
+  },
+  "orderId": "1234567890"
 }
 `
 
 function update(template: string, data: string) {
   try{
-    return Handlebars.compile(template)(JSON.parse(data))
+    const parsedJSON = JSON.parse(data);
+    const compiled = Handlebars.compile(template)(parsedJSON);
+    const node = generateTypeScriptTypes(template)
+    console.log("Template data structure", toString(node));
+    console.log("Json data structure", parsedJSON);
+    console.log("Template has expected data structure", isExpected(node, parsedJSON))
+    return compiled;
   } catch (e) {
     console.error(e)
     return null;
