@@ -2,10 +2,8 @@
 
 import CompiledRenderer from '@/components/CompliedRenderer';
 import { parseHBSTemplate } from '@/lib/parse';
-import { toString } from '@/lib/string';
 import Handlebars from 'handlebars';
 import { useState } from 'react';
-import { z } from 'zod';
 
 const defaultTemplate = `
 <!DOCTYPE html>
