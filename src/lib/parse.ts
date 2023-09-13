@@ -1,68 +1,68 @@
 import handlebars from 'handlebars';
-import ts from 'typescript';
+import { z } from 'zod';
 
-function parsePathExpressionNode(node: hbs.AST.PathExpression): ts.PropertySignature | null {
-  return ts.factory.createPropertySignature(undefined, node.parts.join('.'), undefined, ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword));
+function parsePathExpressionNode(node: hbs.AST.PathExpression): z.AnyZodObject {
+  return z.object({
+    [node.parts.join('.')]: z.string(),
+  });
 }
 
-function parseMustacheStatementNode(node: hbs.AST.MustacheStatement): ts.PropertySignature | null {
+function parseMustacheStatementNode(node: hbs.AST.MustacheStatement): z.AnyZodObject | null {
   if (node.path.type === 'PathExpression') {
     return parsePathExpressionNode(node.path as hbs.AST.PathExpression);
   }
   return null;
 }
 
-function parseBlockStatementNode(node: hbs.AST.BlockStatement): ts.PropertySignature | null {
-  if (node.params[0].type === 'PathExpression') {
+function parseBlockStatementNode(node: hbs.AST.BlockStatement): z.AnyZodObject | null {
+  if (node.params[0]?.type === 'PathExpression') {
     const variable = (node.params[0] as hbs.AST.PathExpression).parts[0];
     const type = parseProgramNode(node.program);
     const isEach = node.path.original === 'each';
-    if (type) {
-      return ts.factory.createPropertySignature(
-        undefined,
-        ts.factory.createStringLiteral(variable),
-        undefined,
-        isEach ? ts.factory.createArrayTypeNode(type) : type,
-      );
+    if (variable && type) {
+      return z.object({
+        [variable]: isEach ? z.array(type) : type,
+      });
     }
   }
   return null;
 }
 
-function convertToNestedObject(props: ts.PropertySignature[]): ts.TypeLiteralNode {
-  const propsMap = props.reduce((acc, prop) => {
-    // @ts-ignore
-    const [key, ...rest] = prop.name.text.split('.');
+function convertToNestedObject(props: z.AnyZodObject[]): z.AnyZodObject {
+  const schema: Record<string, z.AnyZodObject> = props.reduce((acc, prop) => {
+    const fullKey = Object.keys(prop.shape)[0];
+    const [key, ...rest] = fullKey.split('.');
     if (rest.length) {
-      const nestedProps = convertToNestedObject([ts.factory.createPropertySignature(undefined, rest.join('.'), undefined, prop.type!)]);
+      const innerKey = rest.join('.');
+      const nestedProps = convertToNestedObject([
+        z.object({
+          [innerKey]: prop.shape[fullKey],
+        }),
+      ]);
 
-      if (!acc[key]) {
+      const type = acc[key];
+      if (!type) {
         acc[key] = nestedProps;
       } else {
-        if (ts.isPropertySignature(acc[key])) {
-          const current = acc[key] as unknown as ts.PropertySignature;
-          acc[key] = ts.factory.createTypeLiteralNode([current, ...nestedProps.members]);
-        } else if (ts.isTypeLiteralNode(acc[key])) {
-          const current = acc[key] as unknown as ts.TypeLiteralNode;
-          acc[key] = ts.factory.createTypeLiteralNode([...current.members, ...nestedProps.members]);
-        }
+        acc[key] = type.merge(nestedProps);
       }
     } else {
-      acc[key] = prop.type!;
+      acc[key] = prop.shape[key];
     }
 
     return acc;
-  }, {} as { [key: string]: ts.TypeNode });
+  }, {} as Record<string, z.AnyZodObject>);
 
-  const propsMapEntries = Object.entries(propsMap).map(([name, type]) => {
-    return ts.factory.createPropertySignature(undefined, name, undefined, type);
-  });
+  const schemaObject = Object.entries(schema).reduce((acc, [name, type]) => {
+    acc[name] = type;
+    return acc;
+  }, {} as Record<string, z.AnyZodObject>);
 
-  return ts.factory.createTypeLiteralNode(propsMapEntries);
+  return z.object(schemaObject);
 }
 
-function parseProgramNode(node: hbs.AST.Program): ts.TypeNode | null {
-  const props = node.body.reduce((acc, node) => {
+function parseProgramNode(node: hbs.AST.Program): z.AnyZodObject | null {
+  const props: z.AnyZodObject[] = node.body.reduce((acc, node) => {
     if (node.type === 'BlockStatement') {
       const prop = parseBlockStatementNode(node as hbs.AST.BlockStatement);
       if (prop) {
@@ -78,7 +78,7 @@ function parseProgramNode(node: hbs.AST.Program): ts.TypeNode | null {
     }
 
     return acc;
-  }, [] as ts.PropertySignature[]);
+  }, [] as z.AnyZodObject[]);
 
   if (props.length) {
     return convertToNestedObject(props);
@@ -88,7 +88,7 @@ function parseProgramNode(node: hbs.AST.Program): ts.TypeNode | null {
 }
 
 // Function to generate TypeScript types from a Handlebars template
-export function parseHBSTemplate(hbsTemplate: string): ts.TypeNode | null {
+export function parseHBSTemplate(hbsTemplate: string): z.AnyZodObject | null {
   const ast = handlebars.parse(hbsTemplate);
 
   return parseProgramNode(ast);

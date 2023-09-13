@@ -1,11 +1,11 @@
 'use client';
 
 import CompiledRenderer from '@/components/CompliedRenderer';
-import { areEqual } from '@/lib/compare';
 import { parseHBSTemplate } from '@/lib/parse';
 import { toString } from '@/lib/string';
 import Handlebars from 'handlebars';
 import { useState } from 'react';
+import { z } from 'zod';
 
 const defaultTemplate = `
 <!DOCTYPE html>
@@ -220,14 +220,13 @@ function update(template: string, data: string) {
 function checkTypeEquality(template: string, data: string): boolean {
   try{
     const parsedJSON = JSON.parse(data);
-    const node = parseHBSTemplate(template)
-    const equal = areEqual(node, parsedJSON);
+    const schema = parseHBSTemplate(template)
 
-    if (!equal) {
+    if (schema === null) {
       return false;
     }
 
-    return true;
+    return schema.safeParse(parsedJSON).success;
   } catch (e) {
     console.error(e)
     return false;
